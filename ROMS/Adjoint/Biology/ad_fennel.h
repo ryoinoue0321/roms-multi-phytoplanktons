@@ -238,7 +238,13 @@
 !  Local variable declarations.
 !
 #ifdef PHOSPHORUS
+# if defined PHYT2
+      integer, parameter :: Nsink = 9
+# elif defined PHYT3
+      integer, parameter :: Nsink = 10
+# else
       integer, parameter :: Nsink = 6
+# endif
 #else
       integer, parameter :: Nsink = 4
 #endif
@@ -293,6 +299,37 @@
 
       real(r8) :: total_N
       real(r8) :: ad_total_N
+      real(r8) :: cff_, ad_cff_  /* Noda*/
+
+#ifdef PHYT2
+/************************************************************
+#############################################################
+#####     add variables Noda 2018   ################*/
+      real(r8) :: Att2, ExpAtt2, Epp2, Itop2, PAR2, PAR12, Vp2
+      real(r8) :: ad_Att2, ad_ExpAtt2, ad_Itop2, ad_PAR2
+
+      real(r8) :: cff02, cff12, cff22, cff32, cff42, cff52
+      real(r8) :: fac12, fac22, fac32, fac42, fac52, fac62
+      real(r8) :: ad_cff02, ad_cff12, ad_cff22, ad_cff32, ad_cff42, ad_cff52
+      real(r8) :: ad_fac12, ad_fac22, ad_fac32, ad_fac42, ad_fac52, ad_fac62
+      real(r8) :: fac02, ad_fac02, adfac02, adfac12
+      real(r8) :: Chl2C1, Chl2C2, t_PPmax2
+      real(r8) :: ad_Chl2C1, ad_Chl2C2, ad_t_PPmax2
+      real(r8) :: N_Flux_NewProd2, N_Flux_RegProd2
+      real(r8) :: ad_N_Flux_NewProd2, ad_N_Flux_RegProd2
+      real(r8) :: P_Flux2, cff62
+      real(r8) :: ad_P_Flux2, ad_cff62
+      real(r8) :: N_Flux_Assim2, N_Flux_Egest2
+      real(r8) :: ad_N_Flux_Assim2, ad_N_Flux_Egest2
+      real(r8) :: N_Flux_Pmortal2, N_Flux_CoagP2
+      real(r8) :: ad_N_Flux_Pmortal2, ad_N_Flux_CoagP2
+      real(r8) :: Pratio= 0.5_r8    ! Noda 2018
+      real(r8) :: N_Flux_Presp, N_Flux_Presp2  !Noda, 2018
+/*###########################################################
+*************************************************************/
+#else
+      real(r8) :: Pratio= 1.0_r8    ! Noda 2018
+#endif
 
 #ifdef OXYGEN
       real(r8) :: SchmidtN_Ox, O2satu, O2_Flux
@@ -469,6 +506,11 @@
       idsink(5)=iSDeP
       idsink(6)=iLDeP
 #endif
+#ifdef PHYT2
+      idsink(7)=iChlo1
+      idsink(8)=iChlo2
+      idsink(9)=iPhyt2
+#endif
 !
 !  Set vertical sinking velocity vector in the same order as the
 !  identification vector, IDSINK.
@@ -485,9 +527,17 @@
 #ifdef PHOSPHORUS
       Wbio(5)=wSDet(ng)               ! small Phosphorus-detritus
       Wbio(6)=wLDet(ng)               ! large Phosphorus-detritus
+# ifdef PHYT2
+      Wbio(7)=wPhy(ng)                ! chlorophyll1
+      Wbio(8)=wPhy(ng)                ! chlorophyll2
+      Wbio(9)=wPhy(ng)                ! phytoplankton2
+# endif
 
       ad_Wbio(5)=0.0_r8
       ad_Wbio(6)=0.0_r8
+      ad_Wbio(7)=0.0_r8
+      ad_Wbio(8)=0.0_r8
+      ad_Wbio(9)=0.0_r8
 #endif
 !
       J_LOOP : DO j=Jstr,Jend
@@ -559,6 +609,63 @@
 #endif
 #ifdef H2S
         ad_S_Flux=0.0_r8
+#endif
+#ifdef PHYT2 /*Noda*/
+        ad_Att2=0.0_r8
+!        ad_AttFac=0.0_r8
+        ad_ExpAtt2=0.0_r8
+        ad_Itop2=0.0_r8
+        ad_PAR2=0.0_r8
+!        ad_Epp=0.0_r8
+!        ad_L_NH4=0.0_r8
+!        ad_L_NO3=0.0_r8
+!        ad_LTOT=0.0_r8
+!        ad_Vp=0.0_r8
+        ad_Chl2C1=0.0_r8
+        ad_Chl2C2=0.0_r8
+        ad_t_PPmax2=0.0_r8
+!        ad_inhNH4=0.0_r8
+
+        ad_cff02=0.0_r8
+        ad_cff12=0.0_r8
+        ad_cff22=0.0_r8
+        ad_cff32=0.0_r8
+        ad_cff42=0.0_r8
+        ad_cff52=0.0_r8
+        ad_fac12=0.0_r8
+        ad_fac22=0.0_r8
+        ad_fac32=0.0_r8
+!        ad_cffL=0.0_r8
+!        ad_cffR=0.0_r8
+!        ad_cu=0.0_r8
+!        ad_dltL=0.0_r8
+!        ad_dltR=0.0_r8
+        fac02=0.0_r8
+        ad_fac02=0.0_r8
+        adfac02=0.0_r8
+        adfac12=0.0_r8
+!        adfac2=0.0_r8
+!        adfac3=0.0_r8
+
+!        ad_total_N=0.0_r8
+
+        ad_N_Flux_Assim2=0.0_r8
+!        ad_N_Flux_CoagD=0.0_r8
+        ad_N_Flux_CoagP2=0.0_r8
+        ad_N_Flux_Egest2=0.0_r8
+        ad_N_Flux_NewProd2=0.0_r8
+        ad_N_Flux_RegProd2=0.0_r8
+!        ad_N_Flux_Nitrifi=0.0_r8
+        ad_N_Flux_Pmortal2=0.0_r8
+!        ad_N_Flux_Zmortal=0.0_r8
+!        ad_N_Flux_Remine=0.0_r8
+!        ad_N_Flux_Zexcret=0.0_r8
+!        ad_N_Flux_Zmetabo=0.0_r8
+
+!        ad_L_PO4=0.0_r8
+!        ad_LMIN=0.0_r8
+        ad_cff62=0.0_r8
+        ad_P_Flux2=0.0_r8
 #endif
 !
         DO k=1,N(ng)

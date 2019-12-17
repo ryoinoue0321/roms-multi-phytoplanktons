@@ -322,7 +322,12 @@
           fac1=dtdays*CoagR(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff1=fac1*(Bio1(i,k,iSDeN)+Bio1(i,k,iPhyt))
+#ifdef PHYT2 /*1*/
+              cff_=Bio1(i,k,iPhyt)+Bio1(i,k,iPhyt2)
+#else
+              cff_=Bio1(i,k,iPhyt)
+#endif
+              cff1=fac1*(Bio1(i,k,iSDeN)+cff_)
               cff2=1.0_r8/(1.0_r8+cff1)
 !!            Bio1(i,k,iPhyt)=Bio(i,k,iPhyt)
 !!            Bio1(i,k,iChlo)=Bio(i,k,iChlo)
@@ -332,6 +337,9 @@
 !>            Bio(i,k,iSDeN)=Bio(i,k,iSDeN)*cff2
               N_Flux_CoagP=Bio2(i,k,iPhyt)*cff1
               N_Flux_CoagD=Bio2(i,k,iSDeN)*cff1
+#ifdef PHYT2 /*2*/
+              N_Flux_CoagP2=Bio2(i,k,iPhyt2)*cff1
+#endif
 !!            Bio1(i,k,iLDeN)=Bio(i,k,iLDeN)
 !>            Bio(i,k,iLDeN)=Bio(i,k,iLDeN)+                            &
 !>   &                       N_Flux_CoagP+N_Flux_CoagD
@@ -344,6 +352,17 @@
 #endif
 !             ==========================================================
 #ifdef PHOSPHORUS
+# ifdef PHYT2 /*3*/
+!>            tl_Bio(i,k,iLDeP)=tl_Bio(i,k,iLDeP)+PhyPN(ng)*            &
+!>   &            (tl_N_Flux_CoagP+tl_N_Flux_CoagP2+tl_N_Flux_CoagD)+   &
+!>   &            tl_PhyPN*(N_Flux_CoagP+N_Flux_CoagP2+N_Flux_CoagD)
+              adfac=PhyPN(ng)*ad_Bio(i,k,iLDeP)
+              ad_N_Flux_CoagD=ad_N_Flux_CoagD+adfac
+              ad_N_Flux_CoagP=ad_N_Flux_CoagP+adfac
+              ad_N_Flux_CoagP2=ad_N_Flux_CoagP2+adfac
+              ad_PhyPN=ad_PhyPN+(N_Flux_CoagP+N_Flux_CoagP2+            &
+     &                 N_Flux_CoagD)*ad_Bio(i,k,iLDeP)
+# else
 !>            tl_Bio(i,k,iLDeP)=tl_Bio(i,k,iLDeP)+PhyPN(ng)*            &
 !>   &                          (tl_N_Flux_CoagP+tl_N_Flux_CoagD)+      &
 !>   &                          tl_PhyPN*(N_Flux_CoagP+N_Flux_CoagD)
@@ -352,6 +371,7 @@
               ad_N_Flux_CoagP=ad_N_Flux_CoagP+adfac
               ad_PhyPN=ad_PhyPN+                                        &
      &                 (N_Flux_CoagP+N_Flux_CoagD)*ad_Bio(i,k,iLDeP)
+#endif
 
 !>            tl_Bio(i,k,iSDeP)=tl_Bio(i,k,iSDeP)-                      &
 !>   &                          (tl_PhyPN*N_Flux_CoagD+                 &
@@ -360,10 +380,20 @@
      &                        PhyPN(ng)*ad_Bio(i,k,iSDeP)
               ad_PhyPN=ad_PhyPN-N_Flux_CoagD*ad_Bio(i,k,iSDeP)
 #endif
+
+#ifdef PHYT2 /*4*/
+!>            tl_Bio(i,k,iLDeN)=tl_Bio(i,k,iLDeN)+                      &
+!>   &                          tl_N_Flux_CoagP2+                       &
+!>   &                          tl_N_Flux_CoagP+tl_N_Flux_CoagD
+              ad_N_Flux_CoagD=ad_N_Flux_CoagD+ad_Bio(i,k,iLDeN)
+              ad_N_Flux_CoagP=ad_N_Flux_CoagP+ad_Bio(i,k,iLDeN)
+              ad_N_Flux_CoagP2=ad_N_Flux_CoagP2+ad_Bio(i,k,iLDeN)
+#else
 !>            tl_Bio(i,k,iLDeN)=tl_Bio(i,k,iLDeN)+                      &
 !>   &                          tl_N_Flux_CoagP+tl_N_Flux_CoagD
               ad_N_Flux_CoagD=ad_N_Flux_CoagD+ad_Bio(i,k,iLDeN)
               ad_N_Flux_CoagP=ad_N_Flux_CoagP+ad_Bio(i,k,iLDeN)
+#endif
 
 !>            tl_N_Flux_CoagD=tl_Bio(i,k,iSDeN)*cff1+                   &
 !>   &                        Bio2(i,k,iSDeN)*tl_cff1
@@ -376,6 +406,28 @@
               ad_cff1=ad_cff1+Bio2(i,k,iPhyt)*ad_N_Flux_CoagP
               ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+ad_N_Flux_CoagP*cff1
               ad_N_Flux_CoagP=0.0_r8
+#ifdef PHYT2 /*5*/
+!>            tl_N_Flux_CoagP2=tl_Bio(i,k,iPhyt2)*cff1+                 &
+!>   &                         Bio2(i,k,iPhyt2)*tl_cff1
+              ad_cff1=ad_cff1+Bio2(i,k,iPhyt2)*ad_N_Flux_CoagP2
+              ad_Bio(i,k,iPhyt2)=ad_Bio(i,k,iPhyt2)+ad_N_Flux_CoagP2*cff1
+              ad_N_Flux_CoagP2=0.0_r8
+
+!>            tl_Bio(i,k,iChlo2)=tl_Bio(i,k,iChlo2)*cff2+               &
+!>   &                           Bio1(i,k,iChlo2)*tl_cff2
+              ad_cff2=ad_cff2+Bio1(i,k,iChlo2)*ad_Bio(i,k,iChlo2)
+              ad_Bio(i,k,iChlo2)=ad_Bio(i,k,iChlo2)*cff2
+
+!>            tl_Bio(i,k,iPhyt2)=tl_Bio(i,k,iPhyt2)*cff2+               &
+!>   &                           Bio1(i,k,iPhyt2)*tl_cff2
+              ad_cff2=ad_cff2+Bio1(i,k,iPhyt2)*ad_Bio(i,k,iPhyt2)
+              ad_Bio(i,k,iPhyt2)=ad_Bio(i,k,iPhyt2)*cff2
+
+!>            tl_Bio(i,k,iChlo1)=tl_Bio(i,k,iChlo1)*cff2+               &
+!>   &                           Bio1(i,k,iChlo1)*tl_cff2
+              ad_cff2=ad_cff2+Bio1(i,k,iChlo1)*ad_Bio(i,k,iChlo1)
+              ad_Bio(i,k,iChlo1)=ad_Bio(i,k,iChlo1)*cff2
+#endif
 
 !>            tl_Bio(i,k,iSDeN)=tl_Bio(i,k,iSDeN)*cff2+                 &
 !>   &                          Bio1(i,k,iSDeN)*tl_cff2
@@ -396,6 +448,17 @@
               ad_cff1=ad_cff1-cff2*cff2*ad_cff2
               ad_cff2=0.0_r8
 
+#ifdef PHYT2 /*6*/
+!>            tl_cff1=tl_fac1*(Bio1(i,k,iSDeN)+Bio1(i,k,iPhyt)+Bio1(i,k,iPhyt2))+&
+!>   &                fac1*(tl_Bio(i,k,iSDeN)+tl_Bio(i,k,iPhyt)+tl_Bio(i,k,iPhyt2))
+              adfac=fac1*ad_cff1
+              ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+adfac
+              ad_Bio(i,k,iPhyt2)=ad_Bio(i,k,iPhyt2)+adfac
+              ad_Bio(i,k,iSDeN)=ad_Bio(i,k,iSDeN)+adfac
+              ad_fac1=ad_fac1+(Bio1(i,k,iSDeN)+Bio1(i,k,iPhyt)+         &
+     &                         Bio1(i,k,iPhyt2))*ad_cff1
+              ad_cff1=0.0_r8
+#else
 !>            tl_cff1=tl_fac1*(Bio1(i,k,iSDeN)+Bio1(i,k,iPhyt))+        &
 !>   &                fac1*(tl_Bio(i,k,iSDeN)+tl_Bio(i,k,iPhyt))
               adfac=fac1*ad_cff1
@@ -403,6 +466,7 @@
               ad_Bio(i,k,iSDeN)=ad_Bio(i,k,iSDeN)+adfac
               ad_fac1=ad_fac1+(Bio1(i,k,iSDeN)+Bio1(i,k,iPhyt))*ad_cff1
               ad_cff1=0.0_r8
+#endif
             END DO
           END DO
 !>        tl_fac1=dtdays*tl_CoagR
