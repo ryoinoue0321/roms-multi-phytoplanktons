@@ -107,7 +107,7 @@
       CONTAINS
 
 # if defined BIO_FENNEL
-#  include <fennel.h>
+#  include <fennel_2019_ver6.h>
 # elif defined ECOSIM
 #  include <ecosim.h>
 # elif defined NEMURO
