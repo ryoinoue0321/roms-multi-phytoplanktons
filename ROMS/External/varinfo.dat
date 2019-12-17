@@ -2868,6 +2868,283 @@
 
 !
 !---------------------------------------------------------------------
+!  Define names of variables associated with Noda additional variables.
+!---------------------------------------------------------------------
+!
+'chlorophyll1'                                      ! Input/Output
+  'chlorophyll1 concentration'
+  'milligrams_chlorophyll1 meter-3'                 ! [milligrams/m3]
+  'chlorophyll1, scalar, series'
+  'ocean_time'
+  'idTvar(iChlo1)'
+  'r3dvar'
+  1.0d0
+
+'chlorophyll1'                                      ! Input
+  'chlorophyll1 concentration functional'
+  'milligrams_chlorophyll1 meter-3'                 ! [milligrams/m3]
+  'chlorophyll1, scalar, series'
+  'ocean_time'
+  'idTads(iChlo1)'
+  'r3dvar'
+  1.0d0
+
+'phytoplankton2'
+  'phytoplankton2 concentration'                   ! Input/Output
+  'millimole_nitrogen meter-3'
+  'phytoplankton2, scalar, series'
+  'ocean_time'
+  'idTvar(iPhyt2)'
+  'r3dvar'
+  1.0d0
+
+'phytoplankton2'
+  'phytoplankton2 concentration functional'        ! Input
+  'millimole_nitrogen meter-3'
+  'phytoplankton2, scalar, series'
+  'ocean_time'
+  'idTads(iPhyt2)'
+  'r3dvar'
+  1.0d0
+
+'chlorophyll2'                                      ! Input/Output
+  'chlorophyll2 concentration'
+  'milligrams_chlorophyll2 meter-3'                 ! [milligrams/m3]
+  'chlorophyll2, scalar, series'
+  'ocean_time'
+  'idTvar(iChlo2)'
+  'r3dvar'
+  1.0d0
+
+'chlorophyll2'                                      ! Input
+  'chlorophyll2 concentration functional'
+  'milligrams_chlorophyll2 meter-3'                 ! [milligrams/m3]
+  'chlorophyll2, scalar, series'
+  'ocean_time'
+  'idTads(iChlo2)'
+  'r3dvar'
+  1.0d0
+
+'phytoplankton3'
+  'phytoplankton3 concentration'                   ! Input/Output
+  'millimole_nitrogen meter-3'
+  'phytoplankton3, scalar, series'
+  'ocean_time'
+  'idTvar(iPhyt3)'
+  'r3dvar'
+  1.0d0
+
+'phytoplankton3'
+  'phytoplankton3 concentration functional'        ! Input
+  'millimole_nitrogen meter-3'
+  'phytoplankton3, scalar, series'
+  'ocean_time'
+  'idTads(iPhyt3)'
+  'r3dvar'
+  1.0d0
+
+'chlorophyll3'                                      ! Input/Output
+  'chlorophyll3 concentration'
+  'milligrams_chlorophyll3 meter-3'                 ! [milligrams/m3]
+  'chlorophyll3, scalar, series'
+  'ocean_time'
+  'idTvar(iChlo3)'
+  'r3dvar'
+  1.0d0
+
+'chlorophyll3'                                      ! Input
+  'chlorophyll3 concentration functional'
+  'milligrams_chlorophyll3 meter-3'                 ! [milligrams/m3]
+  'chlorophyll3, scalar, series'
+  'ocean_time'
+  'idTads(iChlo3)'
+  'r3dvar'
+  1.0d0
+
+!
+!  Boundary variables.
+!
+'chlo1_east'                                        ! Input
+  'chlorophyll1 eastern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_east, scalar, series'
+  'chlo_time'
+  'idTbry(ieast,iChlo1)'
+  'nulvar'
+  1.0d0
+
+'chlo1_west'                                        ! Input
+  'chlorophyll1 western boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_west, scalar, series'
+  'chlo_time'
+  'idTbry(iwest,iChlo1)'
+  'nulvar'
+  1.0d0
+
+'chlo1_south'                                       ! Input
+  'chlorophyll1 southern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_south, scalar, series'
+  'chlo_time'
+  'idTbry(isouth,iChlo1)'
+  'nulvar'
+  1.0d0
+
+'chlo1_north'                                       ! Input
+  'chlorophyll1 northern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_north, scalar, series'
+  'chlo_time'
+  'idTbry(inorth,iChlo1)'
+  'nulvar'
+  1.0d0
+'phyt2_east'                                       ! Input
+  'phytoplankton2 eastern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt2_east, scalar, series'
+  'phyt_time'
+  'idTbry(ieast,iPhyt2)'
+  'nulvar'
+  1.0d0
+
+'phyt2_west'                                       ! Input
+  'phytoplankton2 western boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt2_west, scalar, series'
+  'phyt_time'
+  'idTbry(iwest,iPhyt2)'
+  'nulvar'
+  1.0d0
+
+'phyt2_south'                                       ! Input
+  'phytoplankton2 southern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt2_south, scalar, series'
+  'phyt_time'
+  'idTbry(isouth,iPhyt2)'
+  'nulvar'
+  1.0d0
+
+'phyt2_north'                                       ! Input
+  'phytoplankton2 northern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt2_north, scalar, series'
+  'phyt_time'
+  'idTbry(inorth,iPhyt2)'
+  'nulvar'
+  1.0d0
+
+'chlo2_east'                                        ! Input
+  'chlorophyll2 eastern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_east, scalar, series'
+  'chlo_time'
+  'idTbry(ieast,iChlo2)'
+  'nulvar'
+  1.0d0
+
+'chlo2_west'                                        ! Input
+  'chlorophyll2 western boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_west, scalar, series'
+  'chlo_time'
+  'idTbry(iwest,iChlo2)'
+  'nulvar'
+  1.0d0
+
+'chlo2_south'                                       ! Input
+  'chlorophyll2 southern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_south, scalar, series'
+  'chlo_time'
+  'idTbry(isouth,iChlo2)'
+  'nulvar'
+  1.0d0
+
+'chlo2_north'                                       ! Input
+  'chlorophyll2 northern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_north, scalar, series'
+  'chlo_time'
+  'idTbry(inorth,iChlo2)'
+  'nulvar'
+  1.0d0
+
+'phyt3_east'                                       ! Input
+  'phytoplankton3 eastern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt3_east, scalar, series'
+  'phyt_time'
+  'idTbry(ieast,iPhyt3)'
+  'nulvar'
+  1.0d0
+
+'phyt3_west'                                       ! Input
+  'phytoplankton3 western boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt3_west, scalar, series'
+  'phyt_time'
+  'idTbry(iwest,iPhyt3)'
+  'nulvar'
+  1.0d0
+
+'phyt3_south'                                       ! Input
+  'phytoplankton3 southern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt3_south, scalar, series'
+  'phyt_time'
+  'idTbry(isouth,iPhyt3)'
+  'nulvar'
+  1.0d0
+
+'phyt3_north'                                       ! Input
+  'phytoplankton3 northern boundary condition'
+  'millimole_nitrogen metere-3'
+  'phyt3_north, scalar, series'
+  'phyt_time'
+  'idTbry(inorth,iPhyt3)'
+  'nulvar'
+  1.0d0
+
+'chlo3_east'                                        ! Input
+  'chlorophyll3 eastern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_east, scalar, series'
+  'chlo_time'
+  'idTbry(ieast,iChlo3)'
+  'nulvar'
+  1.0d0
+
+'chlo3_west'                                        ! Input
+  'chlorophyll3 western boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_west, scalar, series'
+  'chlo_time'
+  'idTbry(iwest,iChlo3)'
+  'nulvar'
+  1.0d0
+
+'chlo3_south'                                       ! Input
+  'chlorophyll3 southern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_south, scalar, series'
+  'chlo_time'
+  'idTbry(isouth,iChlo3)'
+  'nulvar'
+  1.0d0
+
+'chlo3_north'                                       ! Input
+  'chlorophyll3 northern boundary condition'
+  'milligram meter-3'                              ! [milligram/m3]
+  'chlo_north, scalar, series'
+  'chlo_time'
+  'idTbry(inorth,iChlo3)'
+  'nulvar'
+  1.0d0
+
+!
+!---------------------------------------------------------------------
 !  Define names of variables associated with Okada additional variables.
 !---------------------------------------------------------------------
 !

@@ -89,6 +89,15 @@
       integer :: iLDeP                  ! 
       integer :: iSDeP                  ! 
 #endif
+#ifdef PHYT2
+      integer :: iChlo1
+      integer :: iPhyt2
+      integer :: iChlo2
+#endif
+#ifdef PHYT3
+      integer :: iPhyt3
+      integer :: iChlo3
+#endif
 #ifdef H2S
       integer :: iH2S_                  ! 
 #endif
@@ -246,6 +255,25 @@
       real(r8), allocatable :: ZooMin(:)             ! mmol_N/m3
       real(r8), allocatable :: ZooMR(:)              ! 1/day
       real(r8), allocatable :: pCO2air(:)            ! ppmv
+#ifdef PHYT2
+      real(r8), allocatable :: g_max2(:)
+      real(r8), allocatable :: t_opt2(:)
+      real(r8), allocatable :: I_opt2(:)
+      real(r8), allocatable :: Chl2C_m2(:)            ! mg_Chl/mg_C
+      real(r8), allocatable :: PhyIS2(:)              ! 1/(Watts m-2 day)
+      real(r8), allocatable :: PhyPR(:)              ! 1/day (Noda, 2018)
+      real(r8), allocatable :: PhyBR(:)              ! 1/day (Noda, 2018)
+      real(r8), allocatable :: PhyBR_t(:)  !Noda, 2018
+
+#endif
+#ifdef PHYT3
+      real(r8), allocatable :: g_max3(:)
+      real(r8), allocatable :: t_opt3(:)
+      real(r8), allocatable :: I_opt3(:)
+      real(r8), allocatable :: Chl2C_m3(:)            ! mg_Chl/mg_C
+      real(r8), allocatable :: PhyIS3(:)              ! 1/(Watts m-2 day)
+#endif
+
 #ifdef TANGENT
       real(r8) :: tl_K_PO4   = 0.0_r8
       real(r8) :: tl_PhyPN   = 0.0_r8
@@ -314,6 +342,13 @@
 !      real(r8), allocatable :: tl_wPhy(:)
 !      real(r8), allocatable :: tl_wLDet(:)
 !      real(r8), allocatable :: tl_PARfrac(:)
+# ifdef PHYT2
+      real(r8) :: tl_g_max2   = 0.0_r8
+      real(r8) :: tl_t_opt2   = 0.0_r8
+      real(r8) :: tl_I_opt2   = 0.0_r8
+      real(r8) :: tl_Chl2C_m2 = 0.0_r8   ! mg_Chl/mg_C
+      real(r8) :: tl_PhyIS2   = 0.0_r8   ! 1/(Watts m-2 day)
+# endif
 #endif
 #ifdef ADJOINT
       real(r8) :: ad_K_PO4   = 0.0_r8
@@ -383,6 +418,13 @@
 !      real(r8), allocatable :: ad_wPhy(:)
 !      real(r8), allocatable :: ad_wLDet(:)
 !      real(r8), allocatable :: ad_PARfrac(:)
+# ifdef PHYT2
+      real(r8) :: ad_g_max2   = 0.0_r8
+      real(r8) :: ad_t_opt2   = 0.0_r8
+      real(r8) :: ad_I_opt2   = 0.0_r8
+      real(r8) :: ad_Chl2C_m2 = 0.0_r8   ! mg_Chl/mg_C
+      real(r8) :: ad_PhyIS2   = 0.0_r8   ! 1/(Watts m-2 day)
+# endif
 #endif
 
 #ifdef ADJUST_PARAM
@@ -429,6 +471,23 @@
       integer :: iR_PO4f_m = 40
       integer :: iK_DO_npf = 41
       integer :: it_SODf  = 42
+# ifdef PHYT2
+      integer :: ig_max      = 43
+      integer :: it_opt      = 44
+      integer :: iI_opt      = 45
+      integer :: ig_max2     = 46
+      integer :: it_opt2     = 47
+      integer :: iI_opt2     = 48
+      integer :: iChl2C_m2   = 49
+      integer :: iPhyIS2     = 50
+# endif
+# ifdef PHYT3
+      integer :: ig_max3     = 51
+      integer :: it_opt3     = 52
+      integer :: iI_opt3     = 53
+      integer :: iChl2C_m3   = 54
+      integer :: iPhyIS3     = 55
+# endif
 #endif
 
       CONTAINS
@@ -466,6 +525,13 @@
 
 #ifdef PHOSPHORUS
       NBT=NBT+3
+# ifdef PHYT2
+/*      NBT=NBT+2*/
+      NBT=NBT+3
+# endif
+# ifdef PHYT3
+      NBT=NBT+2
+# endif  
 #endif
 #ifdef H2S
       NBT=NBT+1
@@ -730,6 +796,50 @@
       IF (.not.allocated(pCO2air)) THEN
         allocate ( pCO2air(Ngrids) )
       END IF
+#ifdef PHYT2
+      IF (.not.allocated(g_max2)) THEN
+        allocate ( g_max2(Ngrids) )
+      END IF
+      IF (.not.allocated(t_opt2)) THEN
+        allocate ( t_opt2(Ngrids) )
+      END IF
+      IF (.not.allocated(I_opt2)) THEN
+        allocate ( I_opt2(Ngrids) )
+      END IF
+      IF (.not.allocated(Chl2C_m2)) THEN
+        allocate ( Chl2C_m2(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyIS2)) THEN
+        allocate ( PhyIS2(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyPR)) THEN
+        allocate ( PhyPR(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyBR)) THEN
+        allocate ( PhyBR(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyBR_t)) THEN
+        allocate ( PhyBR_t(Ngrids) )
+      END IF
+#endif
+#ifdef PHYT3
+      IF (.not.allocated(g_max3)) THEN
+        allocate ( g_max3(Ngrids) )
+      END IF
+      IF (.not.allocated(t_opt3)) THEN
+        allocate ( t_opt3(Ngrids) )
+      END IF
+      IF (.not.allocated(I_opt3)) THEN
+        allocate ( I_opt3(Ngrids) )
+      END IF
+      IF (.not.allocated(Chl2C_m3)) THEN
+        allocate ( Chl2C_m3(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyIS3)) THEN
+        allocate ( PhyIS3(Ngrids) )
+      END IF
+#endif
+
 #ifdef TANGENT
 !      IF (.not.allocated(tl_wLDet)) THEN
 !        allocate ( tl_wLDet(Ngrids) )
@@ -810,6 +920,15 @@
       iLDeP=ic+2
       iSDeP=ic+3
       ic=ic+3
+#ifdef PHYT2
+      iChlo1=ic+1
+      iChlo2=ic+2
+      iPhyt2=ic+3
+#endif
+#ifdef PHYT3
+      iChlo3=ic+4
+      iPhyt3=ic+5
+#endif
 # endif
 # ifdef H2S
       iH2S_=ic+1

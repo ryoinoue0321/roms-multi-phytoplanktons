@@ -68,19 +68,78 @@
 !  other attenuation contributions like suspended sediment or CDOM
 !  modify AttFac.
 !
+#ifdef PHYT2 /*1*/
+/*                Att=(AttSW(ng)+                                         &
+     &               AttChl(ng)*(Bio(i,k,iChlo1)+Bio(i,k,iChlo2))+      &
+     &               AttFac)*                                           &
+     &               (z_w(i,j,k)-z_w(i,j,k-1)) */
+                Att=(AttSW(ng)+                                         &
+     &               AttChl(ng)*Bio(i,k,iChlo1)+                        &
+     &               AttFac)*                                           &
+     &               (z_w(i,j,k)-z_w(i,j,k-1))
+                Att2=(AttSW(ng)+                                        &
+     &                AttChl(ng)*Bio(i,k,iChlo2)+                       &
+     &                AttFac)*                                          &
+     &                (z_w(i,j,k)-z_w(i,j,k-1))
+
+                ExpAtt2=EXP(-Att2)
+                Itop2=PAR
+                PAR2=Itop2*(1.0_r8-ExpAtt2)/Att2    ! average at cell center
+
+#else
                 Att=(AttSW(ng)+                                         &
      &               AttChl(ng)*Bio(i,k,iChlo)+                         &
      &               AttFac)*                                           &
      &               (z_w(i,j,k)-z_w(i,j,k-1))
+#endif
                 ExpAtt=EXP(-Att)
                 Itop=PAR
                 PAR=Itop*(1.0_r8-ExpAtt)/Att    ! average at cell center
 !
 !  Compute Chlorophyll-a phytoplankton ratio, [mg Chla / (mg C)].
 !
+
                 cff=PhyCN(ng)*12.0_r8
-                Chl2C=MIN(Bio(i,k,iChlo)/(Bio(i,k,iPhyt)*cff+eps),      &
-     &                    Chl2C_m(ng))
+#ifdef PHYT2 /*1*/
+                Pratio=0.5_r8
+                Chl2C1=MIN(Bio(i,k,iChlo1)/(Bio(i,k,iPhyt)*cff+eps)     &
+     &                     ,Chl2C_m(ng))
+                Chl2C2=MIN(Bio(i,k,iChlo2)/(Bio(i,k,iPhyt2)*cff+eps)    &
+     &                     ,Chl2C_m(ng))
+
+                fac1=Bio(i,k,iPhyt)+Bio(i,k,iPhyt2)
+                Chl2C=MIN(Bio(i,k,iChlo)/(fac1*cff+eps),Chl2C_m(ng))
+#else
+                Chl2C=MIN(Bio(i,k,iChlo)/(Bio(i,k,iPhyt)*cff+eps)       &
+     &                     ,Chl2C_m(ng))
+#endif
+#ifdef GROWTH1
+!
+!  Temperature-limited and light-limited growth rate (okada)
+!
+                cff=(Bio(i,k,itemp)-t_opt(ng))**2.0_r8
+                IF (Bio(i,k,itemp).le.t_opt(ng)) THEN
+                  fac1=EXP(-beta1(ng)*cff)
+                ELSE
+                  fac1=EXP(-beta2(ng)*cff)
+                END IF
+                Att=Att/2.0_r8
+                cff=Itop/I_opt(ng)
+                fac2=EXP(1.0_r8)/Att*(EXP(-cff*Exp(-Att))-EXP(-cff))
+                t_PPmax=g_max(ng)*fac1*fac2
+# ifdef PHYT2 /*3*/
+
+                cff02=(Bio(i,k,itemp)-t_opt(ng))**2.0_r8
+                IF (Bio(i,k,itemp).le.t_opt(ng)) THEN
+                  fac12=EXP(-beta1(ng)*cff02)
+                ELSE
+                  fac12=EXP(-beta2(ng)*cff02)
+                END IF
+                fac22=EXP(1.0_r8)/Att2*(EXP(-cff02*Exp(-Att2))-EXP(-cff02))
+                t_PPmax2=g_max(ng)*fac12*fac22
+# endif
+
+#else
 !
 !  Temperature-limited and light-limited growth rate (Eppley, R.W.,
 !  1972, Fishery Bulletin, 70: 1063-1085; here 0.59=ln(2)*0.851).
@@ -96,6 +155,8 @@
                 fac1=PAR*PhyIS(ng)
                 Epp=Vp/SQRT(Vp*Vp+fac1*fac1)
                 t_PPmax=Epp*fac1
+#endif
+
 #ifdef PHOSPHORUS
 !
 !  Nutrient-limitation terms (Laurent et al. 2012).
@@ -127,20 +188,63 @@
 #ifdef PHOSPHORUS
                 cff6=fac1*PhyPN(ng)*K_PO4(ng)/(1.0_r8+cff3)
                 Bio1(i,k,iPO4_)=Bio(i,k,iPO4_)
+# ifdef PHYT2 /*1*/
+                fac12=dtdays*t_PPmax2*Bio(i,k,iPhyt2)
+                cff42=fac12*K_NO3(ng)*inhNH4/(1.0_r8+cff2)
+                cff52=fac12*K_NH4(ng)/(1.0_r8+cff1)
+                cff62=fac12*PhyPN(ng)*K_PO4(ng)/(1.0_r8+cff3)
+
+# endif
                 IF (LMIN.eq.L_PO4) THEN
-                  Bio(i,k,iPO4_)=Bio(i,k,iPO4_)/(1.0_r8+cff6)
+                  Bio(i,k,iPO4_)=Bio(i,k,iPO4_)/(1.0_r8                 &
+# ifdef PHYT2 /*2*/
+     &                                           +cff62                 &
+# endif
+     &                                           +cff6)
                   P_Flux=Bio(i,k,iPO4_)*cff6
                   N_Flux_NewProd=P_Flux/PhyPN(ng)*L_NO3/MAX(LTOT,eps)
                   N_Flux_RegProd=P_Flux/PhyPN(ng)*L_NH4/MAX(LTOT,eps)
-                  Bio(i,k,iNO3_)=Bio(i,k,iNO3_)-N_Flux_NewProd
-                  Bio(i,k,iNH4_)=Bio(i,k,iNH4_)-N_Flux_RegProd
+# ifdef PHYT2 /*3*/
+                  P_Flux2=Bio(i,k,iPO4_)*(cff62)
+                  N_Flux_NewProd2=P_Flux2/PhyPN(ng)*L_NO3/MAX(LTOT,eps)
+                  N_Flux_RegProd2=P_Flux2/PhyPN(ng)*L_NH4/MAX(LTOT,eps)
+# endif
+                  Bio(i,k,iNO3_)=Bio(i,k,iNO3_)                         &
+# ifdef PHYT2 /*4*/
+     &                           -N_Flux_NewProd2                       &
+# endif
+     &                           -N_Flux_NewProd
+                             
+                  Bio(i,k,iNH4_)=Bio(i,k,iNH4_)                         &
+# ifdef PHYT2 /*5*/
+     &                           -N_Flux_RegProd2                       &
+# endif
+     &                           -N_Flux_RegProd
                 ELSE
-                  Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff4)
-                  Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff5)
+                  Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8                 &
+# ifdef PHYT2 /*6*/
+     &                                           +cff42                 &
+# endif
+     &                                           +cff4)
+
+                  Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8                 &
+# ifdef PHYT2 /*7*/
+     &                                           +cff52                 &
+# endif
+     &                                           +cff5)
                   N_Flux_NewProd=Bio(i,k,iNO3_)*cff4
                   N_Flux_RegProd=Bio(i,k,iNH4_)*cff5
                   P_Flux=(N_Flux_NewProd+N_Flux_RegProd)*PhyPN(ng)
-                  Bio(i,k,iPO4_)=Bio(i,k,iPO4_)-P_Flux
+# ifdef PHYT2 /*8*/
+                  N_Flux_NewProd2=Bio(i,k,iNO3_)*cff42
+                  N_Flux_RegProd2=Bio(i,k,iNH4_)*cff52
+                  P_Flux2=(N_Flux_NewProd2+N_Flux_RegProd2)*PhyPN(ng)
+# endif
+                  Bio(i,k,iPO4_)=Bio(i,k,iPO4_)                         &
+# ifdef PHYT2 /*9*/
+     &                           -P_Flux2                               &
+# endif
+     &                           -P_Flux
                 END IF
 #else
                 Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff4)
@@ -151,19 +255,52 @@
                 Bio1(i,k,iPhyt)=Bio(i,k,iPhyt)
                 Bio(i,k,iPhyt)=Bio(i,k,iPhyt)+                          &
      &                         N_Flux_NewProd+N_Flux_RegProd
+#ifdef PHYT2 /*10*/
+                Bio1(i,k,iPhyt2)=Bio(i,k,iPhyt2)
+                Bio(i,k,iPhyt2)=Bio(i,k,iPhyt2)+                        &
+     &                          N_Flux_NewProd2+N_Flux_RegProd2
+#endif
 !
+#ifdef PHYT2 /*11*/
+/*                Bio1(i,k,iChlo)=Bio(i,k,iChlo) */
+                Bio1(i,k,iChlo1)=Bio(i,k,iChlo1)
+                Bio1(i,k,iChlo2)=Bio(i,k,iChlo2)
+/*                Bio(i,k,iChlo)=Bio(i,k,iChlo)+                          &
+     &                         (dtdays*t_PPmax*t_PPmax*LMIN*LMIN*       &
+     &                          Chl2C_m(ng)*Bio(i,k,iChlo1))/           &
+     &                         (PhyIS(ng)*MAX(Chl2C,eps)*PAR+eps)+      &
+     &                         (dtdays*t_PPmax2*t_PPmax2*LMIN*LMIN*     &
+     &                          Chl2C_m(ng)*Bio(i,k,iChlo2))/           &
+     &                         (PhyIS(ng)*MAX(Chl2C2,eps)*PAR+eps)  */
+
+                Bio(i,k,iChlo1)=Bio(i,k,iChlo1)+                        &
+     &                         (dtdays*t_PPmax*t_PPmax*LMIN*LMIN*       &
+     &                          Chl2C_m(ng)*Bio(i,k,iChlo1))/           &
+     &                         (PhyIS(ng)*MAX(Chl2C1,eps)*PAR+eps)
+
+                Bio(i,k,iChlo2)=Bio(i,k,iChlo2)+                        &
+     &                         (dtdays*t_PPmax2*t_PPmax2*LMIN*LMIN*     &
+     &                          Chl2C_m(ng)*Bio(i,k,iChlo2))/           &
+     &                         (PhyIS(ng)*MAX(Chl2C2,eps)*PAR2+eps)     
+#else /*11*/
                 Bio1(i,k,iChlo)=Bio(i,k,iChlo)
                 Bio(i,k,iChlo)=Bio(i,k,iChlo)+                          &
-#ifdef PHOSPHORUS
+# ifdef PHOSPHORUS
      &                         (dtdays*t_PPmax*t_PPmax*LMIN*LMIN*       &
-#else
+# else
      &                         (dtdays*t_PPmax*t_PPmax*LTOT*LTOT*       &
-#endif
+# endif
      &                          Chl2C_m(ng)*Bio(i,k,iChlo))/            &
      &                         (PhyIS(ng)*MAX(Chl2C,eps)*PAR+eps)
+#endif /*11*/
+
 #ifdef OXYGEN
                 Bio1(i,k,iOxyg)=Bio(i,k,iOxyg)
                 Bio(i,k,iOxyg)=Bio(i,k,iOxyg)+                          &
+# ifdef PHYT2 /*12*/
+     &                         N_Flux_NewProd2*rOxNO3+                  &
+     &                         N_Flux_RegProd2*rOxNH4+                  &
+# endif
      &                         N_Flux_NewProd*rOxNO3+                   &
      &                         N_Flux_RegProd*rOxNH4
 #endif
@@ -211,6 +348,9 @@
 !  PAR value for the next (deeper) vertical grid cell.
 !
                 PAR=Itop*ExpAtt
+#ifdef PHYT2
+                PAR2=Itop2*ExpAtt2
+#endif
               END DO
 !
 !  If PARsur=0, nitrification occurs at the maximum rate (NitriR).
@@ -283,33 +423,119 @@
               fac3=PhyMR_t(ng)**(Bio(i,k,itemp)-20.0_r8)
               fac1=dtdays*ZooGR(ng)*fac2
               cff2=dtdays*PhyMR(ng)*fac3
+
+# ifdef PHYT2
+	       fac4=1.058_r8**(Bio(i,k,itemp)-20.0_r8)	! Noda
+	       cff4=dtdays*PhyBR(ng)*fac4+dtdays*t_PPmax*PhyPR(ng)	! Noda, 2018		
+	       cff42=dtdays*PhyBR(ng)*fac4+dtdays*t_PPmax2*PhyPR(ng)	! Noda, 2018	
+#  ifdef PHT3
+	       cff43=dtdays*PhyBR(ng)*fac4+dtdays*t_PPmax3*PhyPR(ng)	! Noda, 2018	
+#  endif
+# endif
 #endif
 !
 ! Phytoplankton grazing by zooplankton.
 !
-              cff1=fac1*Bio(i,k,iZoop)*Bio(i,k,iPhyt)/                  &
-     &             (K_Phy(ng)+Bio(i,k,iPhyt)*Bio(i,k,iPhyt))
+#ifdef PHYT2 /*1*/
+              cff1=Bio(i,k,iPhyt)+Bio(i,k,iPhyt2)
+#else
+              cff1=Bio(i,k,iPhyt)
+#endif
+              cff1=fac1*Bio(i,k,iZoop)*cff1/(K_Phy(ng)+cff1*cff1)
               cff3=1.0_r8/(1.0_r8+cff1)
               Bio(i,k,iPhyt)=cff3*Bio(i,k,iPhyt)
               Bio(i,k,iChlo)=cff3*Bio(i,k,iChlo)
+#ifdef PHYT2 /*2*/
+              Bio(i,k,iChlo1)=cff3*Bio(i,k,iChlo1)
+              Bio(i,k,iPhyt2)=cff3*Bio(i,k,iPhyt2)
+              Bio(i,k,iChlo2)=cff3*Bio(i,k,iChlo2)
+#endif
 !
 ! Phytoplankton assimilated to zooplankton and egested to small
 ! detritus.
 !
               N_Flux_Assim=Bio(i,k,iPhyt)*cff1*ZooAE_N(ng)
               N_Flux_Egest=Bio(i,k,iPhyt)*cff1*(1.0_r8-ZooAE_N(ng))
-              Bio(i,k,iZoop)=Bio(i,k,iZoop)+N_Flux_Assim
-              Bio(i,k,iSDeN)=Bio(i,k,iSDeN)+N_Flux_Egest
+#ifdef PHYT2 /*3*/
+              N_Flux_Assim2=Bio(i,k,iPhyt2)*cff1*ZooAE_N(ng)
+              N_Flux_Egest2=Bio(i,k,iPhyt2)*cff1*(1.0_r8-ZooAE_N(ng))
+#endif
+              Bio(i,k,iZoop)=Bio(i,k,iZoop)                             &
+#ifdef PHYT2 /*4*/
+     &                       +N_Flux_Assim2                             &
+#endif
+     &                       +N_Flux_Assim
+              Bio(i,k,iSDeN)=Bio(i,k,iSDeN)                             &
+#ifdef PHYT2 /*5*/
+     &                       +N_Flux_Egest2                             &
+#endif
+     &                       +N_Flux_Egest
+
+!
+! Phytoplankton respiration	! Noda, 2018
+!
+#ifdef PHYT2
+              N_Flux_Presp=cff4*MAX(Bio(i,k,iPhyt)-PhyMin(ng)*Pratio,0.0_r8)
+              Bio(i,k,iPhyt)=Bio(i,k,iPhyt)-N_Flux_Presp
+              N_Flux_Presp2=cff42*MAX(Bio(i,k,iPhyt2)-PhyMin(ng)*Pratio,0.0_r8)
+              Bio(i,k,iPhyt2)=Bio(i,k,iPhyt2)-N_Flux_Presp2
+# ifdef PHYT3
+              N_Flux_Presp3=cff43*MAX(Bio(i,k,iPhyt3)-PhyMin(ng)*Pratio,0.0_r8)
+              Bio(i,k,iPhyt3)=Bio(i,k,iPhyt3)-N_Flux_Presp3
+              Bio(i,k,iChlo3)=Bio(i,k,iChlo3)-                           &
+     &                       cff43*MAX(Bio(i,k,iChlo3)-ChlMin(ng)*Pratio,0.0_r8)
+# endif
+              Bio(i,k,iSDeN)=Bio(i,k,iSDeN)+N_Flux_Presp+N_Flux_Presp2
+              Bio(i,k,iChlo1)=Bio(i,k,iChlo1)-                           &
+     &                       cff4*MAX(Bio(i,k,iChlo1)-ChlMin(ng)*Pratio,0.0_r8)
+              Bio(i,k,iChlo2)=Bio(i,k,iChlo2)-                           &
+     &                       cff42*MAX(Bio(i,k,iChlo2)-ChlMin(ng)*Pratio,0.0_r8)
+
+              Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-N_Flux_Presp*rOxNH4          &
+# ifdef PHYT3
+     &                                     -N_Flux_Presp3*rOxNH4         &
+# endif
+     &                                     -N_Flux_Presp2*rOxNH4
+#endif
 !
 ! Phytoplankton mortality (limited by a phytoplankton minimum).
 !
-              N_Flux_Pmortal=cff2*MAX(Bio(i,k,iPhyt)-PhyMin(ng),0.0_r8)
+              N_Flux_Pmortal=cff2*MAX(Bio(i,k,iPhyt)-PhyMin(ng)*Pratio,0.0_r8)
               Bio(i,k,iPhyt)=Bio(i,k,iPhyt)-N_Flux_Pmortal
-              Bio(i,k,iSDeN)=Bio(i,k,iSDeN)+N_Flux_Pmortal
+#ifdef PHYT2 /*6*/
+              N_Flux_Pmortal2=cff2*MAX(Bio(i,k,iPhyt2)-PhyMin(ng)*(1.0_r8-Pratio),0.0_r8)
+              Bio(i,k,iPhyt2)=Bio(i,k,iPhyt2)-N_Flux_Pmortal2
+#endif
+              Bio(i,k,iSDeN)=Bio(i,k,iSDeN)                             &
+#ifdef PHYT2 /*7*/
+     &                       +N_Flux_Pmortal2                           &
+#endif
+     &                       +N_Flux_Pmortal
+#ifdef PHYT2 /*8*/
+/*              Bio(i,k,iChlo)=Bio(i,k,iChlo)-                            &
+     &                       cff2*MAX(Bio(i,k,iChlo1)-ChlMin(ng),0.0_r8)&
+     &                       -cff2*MAX(Bio(i,k,iChlo2)-ChlMin(ng),0.0_r8)*/
+
+              Bio(i,k,iChlo1)=Bio(i,k,iChlo1)-                          &
+     &                       cff2*MAX(Bio(i,k,iChlo1)-ChlMin(ng),0.0_r8)
+              Bio(i,k,iChlo2)=Bio(i,k,iChlo2)-                          &
+     &                       cff2*MAX(Bio(i,k,iChlo2)-ChlMin(ng),0.0_r8)
+#else /*8*/
               Bio(i,k,iChlo)=Bio(i,k,iChlo)-                            &
      &                       cff2*MAX(Bio(i,k,iChlo)-ChlMin(ng),0.0_r8)
+#endif /*8*/
 #ifdef PHOSPHORUS
               Bio(i,k,iSDeP)=Bio(i,k,iSDeP)+                            &
+#ifdef PHYT2 /*9*/
+     &                       PhyPN(ng)*(N_Flux_Egest2+N_Flux_Pmortal2+  &
+     &                                  N_Flux_Presp+N_Flux_Presp2)+    &
+     &                       (PhyPN(ng)-ZooPN(ng))*N_Flux_Assim2+       &
+# ifdef PHYT3 /*9*/
+     &                       PhyPN(ng)*(N_Flux_Egest3+N_Flux_Pmortal3   &
+     &                                  N_Flux_Presp3)+                 &
+     &                       (PhyPN(ng)-ZooPN(ng))*N_Flux_Assim3+       &
+# endif
+#endif
      &                       PhyPN(ng)*(N_Flux_Egest+N_Flux_Pmortal)+   &
      &                       (PhyPN(ng)-ZooPN(ng))*N_Flux_Assim
 #endif
@@ -327,8 +553,12 @@
           fac3=dtdays*ZooER(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
-              fac1=fac3*Bio(i,k,iPhyt)*Bio(i,k,iPhyt)/                  &
-     &             (K_Phy(ng)+Bio(i,k,iPhyt)*Bio(i,k,iPhyt))
+#ifdef PHYT2 /*1*/
+              fac1=Bio(i,k,iPhyt)+Bio(i,k,iPhyt2)
+#else
+              fac1=Bio(i,k,iPhyt)
+#endif
+              fac1=fac3*fac1*fac1/(K_Phy(ng)+fac1*fac1)
               cff2=fac2*Bio(i,k,iZoop)
               cff3=fac1*ZooAE_N(ng)
               Bio(i,k,iZoop)=Bio(i,k,iZoop)/(1.0_r8+cff2+cff3)
@@ -366,19 +596,38 @@
           fac1=dtdays*CoagR(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
-              cff1=fac1*(Bio(i,k,iSDeN)+Bio(i,k,iPhyt))
+#ifdef PHYT2 /*1*/
+              cff1=Bio(i,k,iPhyt)+Bio(i,k,iPhyt2)
+#else
+              cff1=Bio(i,k,iPhyt)
+#endif
+              cff1=fac1*(Bio(i,k,iSDeN)+cff1)
               cff2=1.0_r8/(1.0_r8+cff1)
               Bio(i,k,iPhyt)=Bio(i,k,iPhyt)*cff2
               Bio(i,k,iChlo)=Bio(i,k,iChlo)*cff2
               Bio(i,k,iSDeN)=Bio(i,k,iSDeN)*cff2
               N_Flux_CoagP=Bio(i,k,iPhyt)*cff1
               N_Flux_CoagD=Bio(i,k,iSDeN)*cff1
+#ifdef PHYT2 /*2*/
+              Bio(i,k,iChlo1)=Bio(i,k,iChlo1)*cff2
+              Bio(i,k,iPhyt2)=Bio(i,k,iPhyt2)*cff2
+              Bio(i,k,iChlo2)=Bio(i,k,iChlo2)*cff2
+              Bio(i,k,iChlo)=Bio(i,k,iChlo1)+Bio(i,k,iChlo2)
+              N_Flux_CoagP2=Bio(i,k,iPhyt2)*cff1
+#endif
               Bio(i,k,iLDeN)=Bio(i,k,iLDeN)+                            &
+#ifdef PHYT2 /*3*/
+     &                       N_Flux_CoagP2+                             &
+#endif
      &                       N_Flux_CoagP+N_Flux_CoagD
 #ifdef PHOSPHORUS
               Bio(i,k,iSDeP)=Bio(i,k,iSDeP)-PhyPN(ng)*N_Flux_CoagD
               Bio(i,k,iLDeP)=Bio(i,k,iLDeP)+                            &
-     &                       PhyPN(ng)*(N_Flux_CoagP+N_Flux_CoagD)
+     &                       PhyPN(ng)*(N_Flux_CoagP+                   &
+# ifdef PHYT2 /*4*/
+     &                                  N_Flux_CoagP2+                  &
+# endif
+     &                                  N_Flux_CoagD)
 #endif
             END DO
           END DO

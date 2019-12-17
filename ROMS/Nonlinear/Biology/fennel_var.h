@@ -25,6 +25,20 @@
                 idTvar(iNH4_)=varid
               CASE ('idTvar(iPhyt)')
                 idTvar(iPhyt)=varid
+#ifdef PHYT2  
+              CASE ('idTvar(iChlo1)') 
+                idTvar(iChlo1)=varid   
+              CASE ('idTvar(iPhyt2)') 
+                idTvar(iPhyt2)=varid
+              CASE ('idTvar(iChlo2)') 
+                idTvar(iChlo2)=varid      
+#endif
+#ifdef PHYT3  
+              CASE ('idTvar(iPhyt3)') 
+                idTvar(iPhyt3)=varid
+              CASE ('idTvar(iChlo3)') 
+                idTvar(iChlo3)=varid      
+#endif
               CASE ('idTvar(iZoop)')
                 idTvar(iZoop)=varid
               CASE ('idTvar(iLDeN)')
@@ -146,6 +160,36 @@
                 idPvar(iK_DO_npf)=varid
               CASE ('idPvar(it_SODf)')
                 idPvar(it_SODf)=varid
+#  ifdef PHYT2
+              CASE ('idPvar(ig_max)')
+                idPvar(ig_max)=varid
+              CASE ('idPvar(it_opt)')
+                idPvar(it_opt)=varid
+              CASE ('idPvar(iI_opt)')
+                idPvar(iI_opt)=varid
+              CASE ('idPvar(ig_max2)')
+                idPvar(ig_max2)=varid
+              CASE ('idPvar(it_opt2)')
+                idPvar(it_opt2)=varid
+              CASE ('idPvar(iI_opt2)')
+                idPvar(iI_opt2)=varid
+              CASE ('idPvar(iChl2C_m2)')
+                idPvar(iChl2C_m2)=varid
+              CASE ('idPvar(iPhyIS2)')
+                idPvar(iPhyIS2)=varid
+#  endif
+#  ifdef PHYT3
+              CASE ('idPvar(ig_max3)')
+                idPvar(ig_max3)=varid
+              CASE ('idPvar(it_opt3)')
+                idPvar(it_opt3)=varid
+              CASE ('idPvar(iI_opt3)')
+                idPvar(iI_opt3)=varid
+              CASE ('idPvar(iChl2C_m3)')
+                idPvar(iChl2C_m3)=varid
+              CASE ('idPvar(iPhyIS3)')
+                idPvar(iPhyIS3)=varid
+#  endif
 # endif
 # ifdef DIAGENESIS
               CASE ('idBpw(iwO2_)')
@@ -321,7 +365,50 @@
                 idTbry(isouth,iPhyt)=varid
               CASE ('idTbry(inorth,iPhyt)')
                 idTbry(inorth,iPhyt)=varid
-
+#ifdef PHYT2
+              CASE ('idTbry(iwest,iChlo1)')  
+                idTbry(iwest,iChlo1)=varid
+              CASE ('idTbry(ieast,iChlo1)')
+                idTbry(ieast,iChlo1)=varid
+              CASE ('idTbry(isouth,iChlo1)')
+                idTbry(isouth,iChlo1)=varid
+              CASE ('idTbry(inorth,iChlo1)')
+                idTbry(inorth,iChlo1)=varid
+              CASE ('idTbry(iwest,iPhyt2)')  
+                idTbry(iwest,iPhyt2)=varid
+              CASE ('idTbry(ieast,iPhyt2)')
+                idTbry(ieast,iPhyt2)=varid
+              CASE ('idTbry(isouth,iPhyt2)')
+                idTbry(isouth,iPhyt2)=varid
+              CASE ('idTbry(inorth,iPhyt2)')
+                idTbry(inorth,iPhyt2)=varid
+              CASE ('idTbry(iwest,iChlo2)')  
+                idTbry(iwest,iChlo2)=varid
+              CASE ('idTbry(ieast,iChlo2)')
+                idTbry(ieast,iChlo2)=varid
+              CASE ('idTbry(isouth,iChlo2)')
+                idTbry(isouth,iChlo2)=varid
+              CASE ('idTbry(inorth,iChlo2)')
+                idTbry(inorth,iChlo2)=varid
+#endif
+#ifdef PHYT3
+              CASE ('idTbry(iwest,iPhyt3)')  
+                idTbry(iwest,iPhyt3)=varid
+              CASE ('idTbry(ieast,iPhyt3)')
+                idTbry(ieast,iPhyt3)=varid
+              CASE ('idTbry(isouth,iPhyt3)')
+                idTbry(isouth,iPhyt3)=varid
+              CASE ('idTbry(inorth,iPhyt3)')
+                idTbry(inorth,iPhyt3)=varid
+              CASE ('idTbry(iwest,iChlo3)')  
+                idTbry(iwest,iChlo3)=varid
+              CASE ('idTbry(ieast,iChlo3)')
+                idTbry(ieast,iChlo3)=varid
+              CASE ('idTbry(isouth,iChlo3)')
+                idTbry(isouth,iChlo3)=varid
+              CASE ('idTbry(inorth,iChlo3)')
+                idTbry(inorth,iChlo3)=varid
+#endif
               CASE ('idTbry(iwest,iZoop)')
                 idTbry(iwest,iZoop)=varid
               CASE ('idTbry(ieast,iZoop)')
@@ -453,6 +540,20 @@
                 idRtrc(iNH4_)=varid
               CASE ('idRtrc(iPhyt)')
                 idRtrc(iPhyt)=varid
+#ifdef PHYT2
+              CASE ('idRtrc(iChlo1)')
+                idRtrc(iChlo1)=varid
+              CASE ('idRtrc(iPhyt2)')
+                idRtrc(iPhyt2)=varid
+              CASE ('idRtrc(iChlo2)')
+                idRtrc(iChlo2)=varid
+#endif
+#ifdef PHYT3
+              CASE ('idRtrc(iPhyt3)')
+                idRtrc(iPhyt3)=varid
+              CASE ('idRtrc(iChlo3)')
+                idRtrc(iChlo3)=varid
+#endif
               CASE ('idRtrc(iZoop)')
                 idRtrc(iZoop)=varid
               CASE ('idRtrc(iLDeN)')

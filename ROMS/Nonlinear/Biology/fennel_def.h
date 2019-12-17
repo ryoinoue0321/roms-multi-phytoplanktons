@@ -473,3 +473,106 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
+#ifdef PHYT2
+!
+! Noda, 2018
+!
+      Vinfo( 1)='PhyPR'
+      Vinfo( 2)='phytoplankton photorespiration rate'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='PhyBR'
+      Vinfo( 2)='phytoplankton basal-respiration rate'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+     IF (exit_flag.ne.NoError) RETURN
+      
+      Vinfo( 1)='PhyBR_t'
+      Vinfo( 2)='PhyBR_t'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+      Vinfo( 1)='g_max2'
+      Vinfo( 2)='g_max2'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+      
+      Vinfo( 1)='t_opt2'
+      Vinfo( 2)='t_opt2'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+      
+      Vinfo( 1)='I_opt2'
+      Vinfo( 2)='I_opt2'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='Chl2C_m2'
+      Vinfo( 2)='maximum chlorophyll2 to carbon ratio'
+      Vinfo( 3)='milligram_chl milligram_carbon-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='PhyIS2'
+      Vinfo( 2)='phytoplankton2, initial slope of P-I curve'
+      Vinfo( 3)='milligram_C milligram_Chl-1 watt-1 meter2 day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+#ifdef PHYT3
+      Vinfo( 1)='g_max3'
+      Vinfo( 2)='g_max3'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+      
+      Vinfo( 1)='t_opt3'
+      Vinfo( 2)='t_opt3'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+      
+      Vinfo( 1)='I_opt3'
+      Vinfo( 2)='I_opt3'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='Chl2C_m3'
+      Vinfo( 2)='maximum chlorophyll3 to carbon ratio'
+      Vinfo( 3)='milligram_chl milligram_carbon-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='PhyIS3'
+      Vinfo( 2)='phytoplankton3, initial slope of P-I curve'
+      Vinfo( 3)='milligram_C milligram_Chl-1 watt-1 meter2 day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+
+

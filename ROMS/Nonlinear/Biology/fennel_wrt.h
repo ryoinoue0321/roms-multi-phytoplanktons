@@ -321,3 +321,67 @@
      &                      pCO2air(ng), (/0/), (/0/),                  &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
+#ifdef PHYT2
+      CALL netcdf_put_fvar (ng, model, ncname, 'g_max2',                &
+     &                      g_max2(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 't_opt2',                &
+     &                      t_opt2(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'I_opt2',                &
+     &                      I_opt2(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_put_fvar (ng, model, ncname, 'Chl2C_m2',              &
+     &                      Chl2C_m2(ng), (/0/), (/0/),                 &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_put_fvar (ng, model, ncname, 'PhyIS2',                &
+     &                      PhyIS2(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'PhyPR',                 &
+     &                      PhyPR(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'PhyBR',                 &
+     &                      PhyBR(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'PhyBR_t',                 &
+     &                      PhyBR_t(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+#endif
+#ifdef PHYT3
+      CALL netcdf_put_fvar (ng, model, ncname, 'g_max3',                &
+     &                      g_max3(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 't_opt3',                &
+     &                      t_opt3(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'I_opt3',                &
+     &                      I_opt3(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_put_fvar (ng, model, ncname, 'Chl2C_m3',              &
+     &                      Chl2C_m3(ng), (/0/), (/0/),                 &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_put_fvar (ng, model, ncname, 'PhyIS3',                &
+     &                      PhyIS3(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif

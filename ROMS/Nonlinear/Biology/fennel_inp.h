@@ -204,6 +204,37 @@
               Npts=load_r(Nval, Rval, Ngrids, wSDet)
             CASE ('pCO2air')
               Npts=load_r(Nval, Rval, Ngrids, pCO2air)
+#ifdef PHYT2
+            CASE ('PhyPR')
+              Npts=load_r(Nval, Rval, Ngrids, PhyPR)
+            CASE ('PhyBR')
+              Npts=load_r(Nval, Rval, Ngrids, PhyBR)
+            CASE ('PhyBR_t')
+             Npts=load_r(Nval, Rval, Ngrids, PhyBR_t)
+
+            CASE ('g_max2')
+              Npts=load_r(Nval, Rval, Ngrids, g_max2)
+            CASE ('t_opt2')
+              Npts=load_r(Nval, Rval, Ngrids, t_opt2)
+            CASE ('I_opt2')
+              Npts=load_r(Nval, Rval, Ngrids, I_opt2)
+            CASE ('Chl2C_m2')
+              Npts=load_r(Nval, Rval, Ngrids, Chl2C_m2)
+            CASE ('PhyIS2')
+              Npts=load_r(Nval, Rval, Ngrids, PhyIS2)
+#endif
+#ifdef PHYT3
+            CASE ('g_max3')
+              Npts=load_r(Nval, Rval, Ngrids, g_max3)
+            CASE ('t_opt3')
+              Npts=load_r(Nval, Rval, Ngrids, t_opt3)
+            CASE ('I_opt3')
+              Npts=load_r(Nval, Rval, Ngrids, I_opt3)
+            CASE ('Chl2C_m3')
+              Npts=load_r(Nval, Rval, Ngrids, Chl2C_m3)
+            CASE ('PhyIS3')
+              Npts=load_r(Nval, Rval, Ngrids, PhyIS3)
+#endif
             CASE ('TNU2')
               Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
               DO ng=1,Ngrids
@@ -1013,6 +1044,17 @@
             WRITE (out,80) R_PO4f_max(ng), 'R_PO4f_max', 'R_PO4f_max'
             WRITE (out,80) K_DO_npflux(ng), 'K_DO_npflux', 'K_DO_npflux'
             WRITE (out,80) t_SODf(ng), 't_SODf', 't_SODf'
+#ifdef PHYT2
+            WRITE (out,80) g_max2(ng), 'g_max2', 'g_max2'
+            WRITE (out,80) t_opt2(ng), 't_opt2', 't_opt2'
+            WRITE (out,80) I_opt2(ng), 'I_opt2', 'I_opt2'
+            WRITE (out,80) PhyBR_t(ng), 'PhyBR_t', 'PhyBR_t'	! Noda, 2018
+#endif
+#ifdef PHYT3
+            WRITE (out,80) g_max3(ng), 'g_max3', 'g_max3'
+            WRITE (out,80) t_opt3(ng), 't_opt3', 't_opt3'
+            WRITE (out,80) I_opt3(ng), 'I_opt3', 'I_opt3'
+#endif
 #ifdef ADJUST_PARAM
             DO i=1,Nparam(ng)
               WRITE (out,110) Lparam(i,ng), 'Lparam', i, 'Lparam', i,' '
@@ -1102,6 +1144,24 @@
      &            'Small detritus sinking velocity (m/day).'
             WRITE (out,80) pCO2air(ng), 'pCO2air',                      &
      &            'CO2 partial pressure in air (ppm by volume).'
+#ifdef PHYT2
+            WRITE (out,80) Chl2C_m2(ng), 'Chl2C_m2',                    &
+     &            'Maximum chlorophyll2 to carbon ratio (mg_Chl/mg_C).'
+            WRITE (out,90) PhyIS2(ng), 'PhyIS2',                        &
+     &            'Phytoplankton2 growth, initial slope of P-I curve',  &
+     &            '(mg_C/(mg_Chl Watts m-2 day)).'
+            WRITE (out,80) PhyPR(ng), 'PhyPR',                          &   !Noda, 2018
+     &            'Phytoplankton photorespiration rate (day-1).'
+            WRITE (out,80) PhyBR(ng), 'PhyBR',                          &   !Noda, 2018
+     &            'Phytoplankton basal-respiration rate (day-1).'
+#endif
+#ifdef PHYT3
+            WRITE (out,80) Chl2C_m3(ng), 'Chl2C_m3',                    &
+     &            'Maximum chlorophyll3 to carbon ratio (mg_Chl/mg_C).'
+            WRITE (out,90) PhyIS3(ng), 'PhyIS3',                        &
+     &            'Phytoplankton3 growth, initial slope of P-I curve',  &
+     &            '(mg_C/(mg_Chl Watts m-2 day)).'
+#endif
 #ifdef TS_DIF2
             DO itrc=1,NBT
               i=idbio(itrc)

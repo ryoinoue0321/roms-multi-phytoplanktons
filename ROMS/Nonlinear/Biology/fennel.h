@@ -329,6 +329,8 @@
       real(r8) :: molv = 22.3916_r8                 ! l/mol
       real(r8) :: rho_O2 = 1.42903_r8               ! g/l
       real(r8) :: mol2g_O2 = 1.42903_r8*22.3916_r8  ! g/mol
+      real(r8), dimension(115,122)  :: FSOD_distribution  !inoue, 2018
+      integer :: FI,FJ
 #endif
 #ifdef CARBON
       integer :: iday, month, year
@@ -374,6 +376,13 @@
 
       real(r8) :: total_N
 
+      real(r8) :: Epp1, L_NH4_1, L_NO3_1, LTOT1, Vp1
+      real(r8) :: Chl2C1, t_PPmax1, inhNH4_1
+      real(r8) :: Att_T1, Att_L1, Att_N1
+
+      real(r8) :: cff01, cff11, cff21, cff31, cff41, cff51, cff61
+      real(r8) :: fac11, fac21, fac31, fac41, fac51, fac61
+
 #ifdef DIAGNOSTICS_BIO
       real(r8) :: fiter
 #endif
@@ -396,6 +405,16 @@
       real(r8) :: N_Flux_Pmortal, N_Flux_Zmortal
       real(r8) :: N_Flux_Remine
       real(r8) :: N_Flux_Zexcret, N_Flux_Zmetabo
+
+      real(r8) :: N_Flux_Assim1
+      real(r8) :: N_Flux_CoagD1, N_Flux_CoagP1
+      real(r8) :: N_Flux_Egest1
+      real(r8) :: N_Flux_NewProd1, N_Flux_RegProd1
+      real(r8) :: N_Flux_Nitrifi1
+      real(r8) :: N_Flux_Pmortal1, N_Flux_Zmortal1
+      real(r8) :: N_Flux_Remine1
+      real(r8) :: N_Flux_Zexcret1, N_Flux_Zmetabo1
+      real(r8) :: N_Flux_Presp1
 
       real(r8), dimension(Nsink) :: Wbio
 
@@ -423,6 +442,9 @@
 #ifdef PHOSPHORUS
       real(r8) :: L_PO4, LMIN, cff6
       real(r8) :: P_Flux
+
+      real(r8) :: L_PO4_1, LMIN1
+      real(r8) :: P_Flux1
 
       real(r8), parameter :: rOxPO4 = 106.0_r8   ! 106/1
 #endif
@@ -571,7 +593,7 @@
 #endif
 #ifdef CHECKER
 !
-! stdout 
+! stdout
 !
       if (master.and.(mod(iic(ng)-1,ninfo(ng)).eq.0)) then
 # ifdef ADJUST_PARAM
@@ -645,15 +667,6 @@
           val(ibio)=0.0_r8
 #endif
         END DO
-#ifdef CARBON
-        DO k=1,N(ng)
-          DO i=Istr,Iend
-            Bio_old(i,k,iTIC_)=MIN(Bio_old(i,k,iTIC_),3000.0_r8)
-            Bio_old(i,k,iTIC_)=MAX(Bio_old(i,k,iTIC_),400.0_r8)
-            Bio(i,k,iTIC_)=Bio_old(i,k,iTIC_)
-          END DO
-        END DO
-#endif
 !
 !  Extract potential temperature and salinity.
 !
@@ -807,10 +820,6 @@
                 t_PPmax=t_PPmax*fac2
 # endif
 #endif
-#ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iPmax)=DiaBio3d(i,j,k,iPmax)+            &
-     &                                dtdays*t_PPmax*fiter
-#endif
 #ifdef PHOSPHORUS
 !
 !  Nutrient-limitation terms (Laurent et al. 2012).
@@ -826,18 +835,10 @@
                 L_NH4=cff1/(1.0_r8+cff1)
                 L_NO3=cff2*inhNH4/(1.0_r8+cff2)
                 LTOT=L_NO3+L_NH4
-#ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iLDIN)=DiaBio3d(i,j,k,iLDIN)+            &
-     &                                dtdays*LTOT*fiter
-#endif
 #ifdef PHOSPHORUS
                 cff3=Bio(i,k,iPO4_)*K_PO4(ng)
                 L_PO4=cff3/(1.0_r8+cff3)
                 LMIN=MIN(LTOT,L_PO4)
-# ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iLPO4)=DiaBio3d(i,j,k,iLPO4)+            &
-     &                                dtdays*L_PO4*fiter
-# endif
 #endif
 !
 !  Nitrate and ammonium uptake by Phytoplankton.
@@ -879,36 +880,10 @@
 #endif
      &                          Chl2C_m(ng)*Bio(i,k,iChlo))/            &
      &                         (PhyIS(ng)*MAX(Chl2C,eps)*PAR+eps)
-#ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iPPro)=DiaBio3d(i,j,k,iPPro)+            &
-# ifdef WET_DRY
-     &                                rmask_full(i,j)*                  &
-# endif
-     &                                (N_Flux_NewProd+N_Flux_RegProd)*  &
-     &                                fiter
-                DiaBio3d(i,j,k,iNO3u)=DiaBio3d(i,j,k,iNO3u)+            &
-# ifdef WET_DRY
-     &                                rmask_full(i,j)*                  &
-# endif
-     &                                N_Flux_NewProd*fiter
-#endif
 #ifdef OXYGEN
                 Bio(i,k,iOxyg)=Bio(i,k,iOxyg)+                          &
      &                         N_Flux_NewProd*rOxNO3+                   &
      &                         N_Flux_RegProd*rOxNH4
-#endif
-#ifdef CARBON
-!
-!  Total inorganic carbon (CO2) uptake during phytoplankton growth.
-!
-                cff1=PhyCN(ng)*(N_Flux_NewProd+N_Flux_RegProd)
-                Bio(i,k,iTIC_)=Bio(i,k,iTIC_)-cff1
-# ifdef TALK_NONCONSERV
-!
-!  Account for the uptake of NO3 on total alkalinity.
-!
-                Bio(i,k,iTAlk)=Bio(i,k,iTAlk)+N_Flux_NewProd
-# endif
 #endif
 !
 ! The Nitrification of NH4 ==> NO3 is thought to occur only in dark and
@@ -943,15 +918,8 @@
                 Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff3)
                 N_Flux_Nitrifi=Bio(i,k,iNH4_)*cff3
                 Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+N_Flux_Nitrifi
-#ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iNitr)=DiaBio3d(i,j,k,iNitr)+            &
-     &                                N_Flux_Nitrifi*fiter
-#endif
 #ifdef OXYGEN
                 Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-2.0_r8*N_Flux_Nitrifi
-#endif
-#if defined CARBON && defined TALK_NONCONSERV
-                Bio(i,k,iTAlk)=Bio(i,k,iTAlk)-N_Flux_Nitrifi
 #endif
 !
 !  Light attenuation at the bottom of the grid cell. It is the starting
@@ -980,15 +948,8 @@
                 Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff3)
                 N_Flux_Nitrifi=Bio(i,k,iNH4_)*cff3
                 Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+N_Flux_Nitrifi
-#ifdef DIAGNOSTICS_BIO
-                DiaBio3d(i,j,k,iNitr)=DiaBio3d(i,j,k,iNitr)+            &
-     &                                N_Flux_Nitrifi*fiter
-#endif
 #ifdef OXYGEN
                 Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-2.0_r8*N_Flux_Nitrifi
-#endif
-#if defined CARBON && defined TALK_NONCONSERV
-                Bio(i,k,iTAlk)=Bio(i,k,iTAlk)-N_Flux_Nitrifi
 #endif
               END DO
             END IF
@@ -1011,10 +972,6 @@
               cff3=cff2*fac1
 # endif
               Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff3)
-#  ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iDeni)=DiaBio3d(i,j,k,iDeni)+              &
-     &                              Bio(i,k,iNO3_)*cff3*fiter
-#  endif
             END DO
           END DO
 #endif
@@ -1052,12 +1009,6 @@
               N_Flux_Egest=Bio(i,k,iPhyt)*cff1*(1.0_r8-ZooAE_N(ng))
               Bio(i,k,iZoop)=Bio(i,k,iZoop)+N_Flux_Assim
               Bio(i,k,iSDeN)=Bio(i,k,iSDeN)+N_Flux_Egest
-#ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iAssi)=DiaBio3d(i,j,k,iAssi)+              &
-     &                              N_Flux_Assim*fiter
-              DiaBio3d(i,j,k,iEges)=DiaBio3d(i,j,k,iEges)+              &
-     &                              N_Flux_Egest*fiter
-#endif
 !
 ! Phytoplankton mortality (limited by a phytoplankton minimum).
 !
@@ -1066,19 +1017,10 @@
               Bio(i,k,iSDeN)=Bio(i,k,iSDeN)+N_Flux_Pmortal
               Bio(i,k,iChlo)=Bio(i,k,iChlo)-                            &
      &                       cff2*MAX(Bio(i,k,iChlo)-ChlMin(ng),0.0_r8)
-#ifdef CARBON
-              Bio(i,k,iSDeC)=Bio(i,k,iSDeC)+                            &
-     &                       PhyCN(ng)*(N_Flux_Egest+N_Flux_Pmortal)+   &
-     &                       (PhyCN(ng)-ZooCN(ng))*N_Flux_Assim
-#endif
 #ifdef PHOSPHORUS
               Bio(i,k,iSDeP)=Bio(i,k,iSDeP)+                            &
      &                       PhyPN(ng)*(N_Flux_Egest+N_Flux_Pmortal)+   &
      &                       (PhyPN(ng)-ZooPN(ng))*N_Flux_Assim
-#endif
-#ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iPmor)=DiaBio3d(i,j,k,iPmor)+              &
-     &                              N_Flux_Pmortal*fiter
 #endif
             END DO
           END DO
@@ -1110,12 +1052,6 @@
               Bio(i,k,iPO4_)=Bio(i,k,iPO4_)+ZooPN(ng)*N_Flux_Zexcret
               Bio(i,k,iSDeP)=Bio(i,k,iSDeP)+ZooPN(ng)*N_Flux_Zmortal
 #endif
-#ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iZmor)=DiaBio3d(i,j,k,iZmor)+              &
-     &                              N_Flux_Zmortal*fiter
-              DiaBio3d(i,j,k,iZexc)=DiaBio3d(i,j,k,iZexc)+              &
-     &                              N_Flux_Zexcret*fiter
-#endif
 !
 !  Zooplankton basal metabolism (limited by a zooplankton minimum).
 !
@@ -1128,16 +1064,6 @@
 #ifdef OXYGEN
               Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-                            &
      &                       rOxNH4*(N_Flux_Zmetabo+N_Flux_Zexcret)
-#endif
-#ifdef CARBON
-              Bio(i,k,iSDeC)=Bio(i,k,iSDeC)+                            &
-     &                       ZooCN(ng)*N_Flux_Zmortal
-              Bio(i,k,iTIC_)=Bio(i,k,iTIC_)+                            &
-     &                       ZooCN(ng)*(N_Flux_Zmetabo+N_Flux_Zexcret)
-#endif
-#ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iZmet)=DiaBio3d(i,j,k,iZmet)+              &
-     &                              N_Flux_Zmetabo*fiter
 #endif
             END DO
           END DO
@@ -1158,21 +1084,10 @@
               N_Flux_CoagD=Bio(i,k,iSDeN)*cff1
               Bio(i,k,iLDeN)=Bio(i,k,iLDeN)+                            &
      &                       N_Flux_CoagP+N_Flux_CoagD
-#ifdef CARBON
-              Bio(i,k,iSDeC)=Bio(i,k,iSDeC)-PhyCN(ng)*N_Flux_CoagD
-              Bio(i,k,iLDeC)=Bio(i,k,iLDeC)+                            &
-     &                       PhyCN(ng)*(N_Flux_CoagP+N_Flux_CoagD)
-#endif
 #ifdef PHOSPHORUS
               Bio(i,k,iSDeP)=Bio(i,k,iSDeP)-PhyPN(ng)*N_Flux_CoagD
               Bio(i,k,iLDeP)=Bio(i,k,iLDeP)+                            &
      &                       PhyPN(ng)*(N_Flux_CoagP+N_Flux_CoagD)
-#endif
-#ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iCoaP)=DiaBio3d(i,j,k,iCoaP)+              &
-     &                              N_Flux_CoagP*fiter
-              DiaBio3d(i,j,k,iCoaD)=DiaBio3d(i,j,k,iCoaD)+              &
-     &                              N_Flux_CoagD*fiter
 #endif
             END DO
           END DO
@@ -1198,12 +1113,6 @@
               N_Flux_Remine=Bio(i,k,iSDeN)*cff1+Bio(i,k,iLDeN)*cff3
               Bio(i,k,iNH4_)=Bio(i,k,iNH4_)+N_Flux_Remine
               Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-N_Flux_Remine*rOxNH4
-# ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iSReN)=DiaBio3d(i,j,k,iSReN)+              &
-     &                              Bio(i,k,iSDeN)*cff1*fiter
-              DiaBio3d(i,j,k,iLReN)=DiaBio3d(i,j,k,iLReN)+              &
-     &                              Bio(i,k,iLDeN)*cff3*fiter
-# endif
 # ifdef PHOSPHORUS
               cff1=dtdays*SDeRRP(ng)*fac2
               cff2=1.0_r8/(1.0_r8+cff1)
@@ -1213,12 +1122,6 @@
               Bio(i,k,iLDeP)=Bio(i,k,iLDeP)*cff4
               P_Flux=Bio(i,k,iSDeP)*cff1+Bio(i,k,iLDeP)*cff3
               Bio(i,k,iPO4_)=Bio(i,k,iPO4_)+P_Flux
-#  ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iSReP)=DiaBio3d(i,j,k,iSReP)+              &
-     &                              Bio(i,k,iSDeP)*cff1*fiter
-              DiaBio3d(i,j,k,iLReP)=DiaBio3d(i,j,k,iLReP)+              &
-     &                              Bio(i,k,iLDeP)*cff3*fiter
-#  endif
 # endif
             END DO
           END DO
@@ -1233,12 +1136,6 @@
               Bio(i,k,iLDeN)=Bio(i,k,iLDeN)*cff4
               N_Flux_Remine=Bio(i,k,iSDeN)*cff1+Bio(i,k,iLDeN)*cff3
               Bio(i,k,iNH4_)=Bio(i,k,iNH4_)+N_Flux_Remine
-# ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iSReN)=DiaBio3d(i,j,k,iSReN)+              &
-     &                              Bio(i,k,iSDeN)*cff1*fiter
-              DiaBio3d(i,j,k,iLReN)=DiaBio3d(i,j,k,iLReN)+              &
-     &                              Bio(i,k,iLDeN)*cff3*fiter
-# endif
             END DO
           END DO
 # ifdef PHOSPHORUS
@@ -1252,12 +1149,6 @@
               Bio(i,k,iLDeP)=Bio(i,k,iLDeP)*cff4
               P_Flux=Bio(i,k,iSDeP)*cff1+Bio(i,k,iLDeP)*cff3
               Bio(i,k,iPO4_)=Bio(i,k,iPO4_)+P_Flux
-#  ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iSReP)=DiaBio3d(i,j,k,iSReP)+              &
-     &                              Bio(i,k,iSDeP)*cff1*fiter
-              DiaBio3d(i,j,k,iLReP)=DiaBio3d(i,j,k,iLReP)+              &
-     &                              Bio(i,k,iLDeP)*cff3*fiter
-#  endif
             END DO
           END DO
 # endif
@@ -1280,10 +1171,6 @@
               Bio(i,k,iH2S_)=Bio(i,k,iH2S_)*cff2
               S_Flux=Bio(i,k,iH2S_)*cff1
               Bio(i,k,iOxyg)=Bio(i,k,iOxyg)-S_Flux*rOxH2S
-# ifdef DIAGNOSTICS_BIO
-              DiaBio3d(i,j,k,iH2Sf)=DiaBio3d(i,j,k,iH2Sf)+              &
-     &                              S_Flux*rOxH2S*fiter
-# endif
             END DO
           END DO
 #endif
@@ -1352,116 +1239,6 @@
             O2_Flux=cff3*(O2satu-Bio(i,k,iOxyg))
             Bio(i,k,iOxyg)=Bio(i,k,iOxyg)+                              &
      &                     O2_Flux*Hz_inv(i,k)
-# ifdef DIAGNOSTICS_BIO
-            DiaBio2d(i,j,iO2fx)=DiaBio2d(i,j,iO2fx)+                    &
-#  ifdef WET_DRY
-     &                          rmask_full(i,j)*                        &
-#  endif
-     &                          O2_Flux*fiter
-# endif
-
-          END DO
-#endif
-
-#ifdef CARBON
-!
-!-----------------------------------------------------------------------
-!  Allow different remineralization rates for detrital C and detrital N.
-!-----------------------------------------------------------------------
-!
-          cff1=dtdays*SDeRRC(ng)
-          cff2=1.0_r8/(1.0_r8+cff1)
-          cff3=dtdays*LDeRRC(ng)
-          cff4=1.0_r8/(1.0_r8+cff3)
-          DO k=1,N(ng)
-            DO i=Istr,Iend
-              Bio(i,k,iSDeC)=Bio(i,k,iSDeC)*cff2
-              Bio(i,k,iLDeC)=Bio(i,k,iLDeC)*cff4
-              C_Flux_Remine=Bio(i,k,iSDeC)*cff1+Bio(i,k,iLDeC)*cff3
-              Bio(i,k,iTIC_)=Bio(i,k,iTIC_)+C_Flux_Remine
-            END DO
-          END DO
-!
-!-----------------------------------------------------------------------
-!  Surface CO2 gas exchange.
-!-----------------------------------------------------------------------
-!
-!  Compute equilibrium partial pressure inorganic carbon (ppmv) at the
-!  surface.
-!
-          k=N(ng)
-# ifdef pCO2_RZ
-          CALL pCO2_water_RZ (Istr, Iend, LBi, UBi, LBj, UBj,           &
-     &                        IminS, ImaxS, j, DoNewton,                &
-#  ifdef MASKING
-     &                        rmask,                                    &
-#  endif
-     &                        Bio(IminS:,k,itemp), Bio(IminS:,k,isalt), &
-     &                        Bio(IminS:,k,iTIC_), Bio(IminS:,k,iTAlk), &
-     &                        pH, pCO2)
-# else
-          CALL pCO2_water (Istr, Iend, LBi, UBi, LBj, UBj,              &
-     &                     IminS, ImaxS, j, DoNewton,                   &
-#  ifdef MASKING
-     &                     rmask,                                       &
-#  endif
-     &                     Bio(IminS:,k,itemp), Bio(IminS:,k,isalt),    &
-     &                     Bio(IminS:,k,iTIC_), Bio(IminS:,k,iTAlk),    &
-     &                     0.0_r8, 0.0_r8, pH, pCO2)
-# endif
-!
-!  Compute surface CO2 gas exchange.
-!
-          cff1=rho0*550.0_r8
-          cff2=dtdays*0.31_r8*24.0_r8/100.0_r8
-          DO i=Istr,Iend
-!
-!  Compute CO2 transfer velocity : u10squared (u10 in m/s)
-!
-# ifdef BULK_FLUXES
-            u10squ=Uwind(i,j)**2+Vwind(i,j)**2
-# else
-            u10squ=cff1*SQRT((0.5_r8*(sustr(i,j)+sustr(i+1,j)))**2+     &
-     &                       (0.5_r8*(svstr(i,j)+svstr(i,j+1)))**2)
-# endif
-            SchmidtN=Acoef-                                             &
-     &               Bio(i,k,itemp)*(Bcoef-                             &
-     &                               Bio(i,k,itemp)*(Ccoef-             &
-     &                               Bio(i,k,itemp)*Dcoef))
-            cff3=cff2*u10squ*SQRT(660.0_r8/SchmidtN)
-!
-!  Calculate CO2 solubility [mol/(kg.atm)] using Weiss (1974) formula.
-!
-            TempK=0.01_r8*(Bio(i,k,itemp)+273.15_r8)
-            CO2_sol=EXP(A1+                                             &
-     &                  A2/TempK+                                       &
-     &                  A3*LOG(TempK)+                                  &
-     &                  Bio(i,k,isalt)*(B1+TempK*(B2+B3*TempK)))
-!
-!  Add in CO2 gas exchange.
-!
-            CALL caldate (r_date, tdays(ng), year, yday, month, iday,   &
-     &                    hour)
-            pmonth=2003.0_r8-1951.0_r8+yday/365.0_r8
-!!          pCO2air_secular=D0+D1*pmonth*12.0_r8+                       &
-!!   &                         D2*SIN(pi2*pmonth+D3)+                   &
-!!   &                         D4*SIN(pi2*pmonth+D5)+                   &
-!!   &                         D6*SIN(pi2*pmonth+D7)
-!!          CO2_Flux=cff3*CO2_sol*(pCO2air_secular-pCO2(i))
-            CO2_Flux=cff3*CO2_sol*(pCO2air(ng)-pCO2(i))
-            Bio(i,k,iTIC_)=Bio(i,k,iTIC_)+                              &
-     &                     CO2_Flux*Hz_inv(i,k)
-# ifdef DIAGNOSTICS_BIO
-            DiaBio2d(i,j,iCOfx)=DiaBio2d(i,j,iCOfx)+                    &
-#  ifdef WET_DRY
-     &                          rmask_full(i,j)*                        &
-#  endif
-     &                          CO2_Flux*fiter
-            DiaBio2d(i,j,ipCO2)=pCO2(i)
-#  ifdef WET_DRY
-            DiaBio2d(i,j,ipCO2)=DiaBio2d(i,j,ipCO2)*rmask_full(i,j)
-#  endif
-# endif
           END DO
 #endif
 !
@@ -1473,14 +1250,6 @@
 !  "Bio(:,:,isink)" in terms of a set of parabolic segments within each
 !  grid box. Then, compute semi-Lagrangian flux due to sinking.
 !
-#if defined BIO_SED_DIAGENESIS
-          DO itrc=1,NBGCSM
-            DO i=Istr,Iend
-              bsmflux(i,j,itrc)=0.0_r8
-            END DO
-          END DO
-#endif
-
           SINK_LOOP: DO isink=1,Nsink
             ibio=idsink(isink)
 !
@@ -1650,32 +1419,6 @@
                 Bio(i,k,ibio)=qc(i,k)+(FC(i,k)-FC(i,k-1))*Hz_inv(i,k)
               END DO
             END DO
-#ifdef DIAGNOSTICS_BIO
-!
-!  Compute POM flux (c) 2015-09-30 Teruhisa Okada
-!
-            IF (ibio.eq.iPhyt) THEN
-              DO i=Istr,Iend
-                DiaBio2d(i,j,iPONf)=DiaBio2d(i,j,iPONf)-FC(i,0)*fiter
-# ifdef PHOSPHORUS
-                DiaBio2d(i,j,iPOPf)=DiaBio2d(i,j,iPOPf)-                &
-     &                              FC(i,0)*PhyPN(ng)*fiter
-# endif
-              END DO
-            END IF
-            IF ((ibio.eq.iSDeN).or.(ibio.eq.iLDeN)) THEN
-              DO i=Istr,Iend
-                DiaBio2d(i,j,iPONf)=DiaBio2d(i,j,iPONf)-FC(i,0)*fiter
-              END DO
-            END IF
-# ifdef PHOSPHORUS
-            IF ((ibio.eq.iSDeP).or.(ibio.eq.iLDeP)) THEN
-              DO i=Istr,Iend
-                DiaBio2d(i,j,iPOPf)=DiaBio2d(i,j,iPOPf)-FC(i,0)*fiter
-              END DO
-            END IF
-# endif
-#endif
 #if defined BIO_SEDIMENT
 !
 !  Particulate flux reaching the seafloor is remineralized and returned
@@ -1697,77 +1440,29 @@
                 cff1=FC(i,0)*Hz_inv(i,1)
 # ifdef DENITRIFICATION
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1*cff2
-#  ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iNH4f)=DiaBio2d(i,j,iNH4f)+                &
-     &                              cff1*cff2*Hz(i,j,1)*fiter
-                DiaBio2d(i,j,iDNIT)=DiaBio2d(i,j,iDNIT)+                &
-#   ifdef WET_DRY
-     &                              rmask_full(i,j)*                    &
-#   endif
-     &                              (1.0_r8-cff2)*cff1*Hz(i,j,1)*fiter
-#  endif
 #  ifdef OXYGEN
                 Bio(i,1,iOxyg)=Bio(i,1,iOxyg)-cff1*cff3
-#   ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iSODf)=DiaBio2d(i,j,iSODf)-                &
-     &                              cff1*cff3*Hz(i,j,1)*fiter
-#   endif
 #  endif
 # else
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1
-#  ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iNH4f)=DiaBio2d(i,j,iNH4f)+                &
-     &                              cff1*Hz(i,j,1)*fiter
-#  endif
 #  ifdef OXYGEN
                 Bio(i,1,iOxyg)=Bio(i,1,iOxyg)-cff1*cff4
-#   ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iSODf)=DiaBio2d(i,j,iSODf)-                &
-     &                              cff1*cff4*Hz(i,j,1)*fiter
-#   endif
 #  endif
 # endif
               END DO
             END IF
-# ifdef CARBON
-#  ifdef DENITRIFICATION
-            cff3=12.0_r8
-            cff4=0.74_r8
-#  endif
-            IF ((ibio.eq.iSDeC).or.                                     &
-     &          (ibio.eq.iLDeC))THEN
-              DO i=Istr,Iend
-                cff1=FC(i,0)*Hz_inv(i,1)
-                Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+cff1
-              END DO
-            END IF
-            IF (ibio.eq.iPhyt)THEN
-              DO i=Istr,Iend
-                cff1=FC(i,0)*Hz_inv(i,1)
-                Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+cff1*PhyCN(ng)
-              END DO
-            END IF
-# endif
 # ifdef PHOSPHORUS
             IF ((ibio.eq.iLDeP).or.                                     &
      &          (ibio.eq.iSDeP)) THEN
               DO i=Istr,Iend
                 cff1=FC(i,0)*Hz_inv(i,1)
                 Bio(i,1,iPO4_)=Bio(i,1,iPO4_)+cff1
-# ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iPO4f)=DiaBio2d(i,j,iPO4f)+                &
-     &                              cff1*Hz(i,j,1)*fiter
-# endif
               END DO
             END IF
             IF (ibio.eq.iPhyt)THEN
               DO i=Istr,Iend
                 cff1=FC(i,0)*Hz_inv(i,1)
                 Bio(i,1,iPO4_)=Bio(i,1,iPO4_)+cff1*PhyPN(ng)
-# ifdef DIAGNOSTICS_BIO
-                DiaBio2d(i,j,iPO4f)=DiaBio2d(i,j,iPO4f)+                &
-     &                              cff1*PhyPN(ng)*Hz(i,j,1)*fiter
-# endif
               END DO
             END IF
 # endif
@@ -1782,50 +1477,10 @@
               END DO
             END IF
 # endif
-#elif defined BIO_SED_DIAGENESIS
-!
-!  Biogeochemical model run out of sink loop
-!
-            IF ((ibio.eq.iPhyt).or.                                     &
-     &          (ibio.eq.iSDeN).or.                                     &
-     &          (ibio.eq.iLDeN)) THEN
-              DO i=Istr,Iend
-                cff=FC(i,0)/dtdays*PhyCN(ng)
-                bsmflux(i,j,iPOMf)=bsmflux(i,j,iPOMf)+cff*0.54_r8
-                bsmflux(i,j,iPOMs)=bsmflux(i,j,iPOMs)+cff*0.27_r8
-                bsmflux(i,j,iPOMn)=bsmflux(i,j,iPOMn)+cff*0.19_r8
-!                bsmflux(i,j,iPOMf)=cff*0.54_r8
-!                bsmflux(i,j,iPOMs)=cff*0.27_r8
-!                bsmflux(i,j,iPOMn)=cff*0.19_r8
-              END DO
-            END IF
 #endif
           END DO SINK_LOOP
-#if defined BIO_SED_DIAGENESIS
-!
-!  Biogeochemical model run
-!
-          IF (dia_count.eq.1) THEN
-            CALL diagenesis (ng, tile,                                  &
-     &              Istr, Iend, LBi, UBi, LBj, UBj, N(ng), NT(ng),      &
-     &              IminS, ImaxS, j, dtdays,                            &
-     &              Bio(IminS:,1,:), h(IminS:,j),                       &
-     &              bpw, bsm, bpwflux, bsmflux)
-!
-            DO i=Istr,Iend
-              cff=dtdays*Hz_inv(i,1)
-              Bio(i,1,iNH4_)=Bio(i,1,iNH4_)-cff*bpwflux(i,j,iwNH4)
-              Bio(i,1,iNO3_)=Bio(i,1,iNO3_)-cff*bpwflux(i,j,iwNO3)
-              Bio(i,1,iPO4_)=Bio(i,1,iPO4_)-cff*bpwflux(i,j,iwPO4)
-              Bio(i,1,iOxyg)=Bio(i,1,iOxyg)-cff*bpwflux(i,j,iwO2_)
-# ifdef H2S
-              Bio(i,1,iH2S_)=Bio(i,1,iH2S_)-cff*bpwflux(i,j,iwH2S)
-# endif
-!              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)-cff*bpwflux(i,j,iwDOMf)
-!              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)-cff*bpwflux(i,j,iwDOMs)
-            END DO
-          ENDIF
-#elif defined BIO_SED_CONSTANT
+
+#if defined BIO_SED_CONSTANT
 !
 !  Elution and oxygen consumption parameters (okada)
 !
@@ -1875,38 +1530,9 @@
             Bio(i,1,iH2S_)=Bio(i,1,iH2S_)-cff5*rOxH2S
 #  endif
 # endif
-# ifdef DIAGNOSTICS_BIO
-            DiaBio2d(i,j,iNH4f)=DiaBio2d(i,j,iNH4f)+                    &
-     &                          cff*cff2*fac3*Hz(i,j,1)*fiter
-#  ifdef PHOSPHORUS
-            DiaBio2d(i,j,iPO4f)=DiaBio2d(i,j,iPO4f)+                    &
-     &                          cff*cff3*fac3*Hz(i,j,1)*fiter
-#  endif
-#  ifdef OXYGEN
-            DiaBio2d(i,j,iSODf)=DiaBio2d(i,j,iSODf)-                    &
-     &                          cff4*Hz(i,j,1)*fiter
-#  endif
-# endif
           END DO
 #endif
         END DO ITER_LOOP
-#if defined OXYGEN && defined DIAGNOSTICS_BIO
-!
-!  Coumpute COD (c) 2014 Teruhisa Okada
-!
-        DO k=1,N(ng)
-          DO i=Istr,Iend
-            DiaBio3d(i,j,k,iCOD_)=Bio(i,k,iNH4_)*NH42COD+               &
-# ifdef H2S
-     &                            Bio(i,k,iH2S_)*H2S2COD+               &
-# endif
-     &                            Bio(i,k,iSDeN)*PON2COD+               &
-     &                            Bio(i,k,iLDeN)*PON2COD+               &
-     &                            Bio(i,k,iPhyt)*PON2COD+               &
-     &                            Bio(i,k,iZoop)*PON2COD
-          END DO
-        END DO
-#endif
 !
 !-----------------------------------------------------------------------
 !  Update global tracer variables: Add increment due to BGC processes
